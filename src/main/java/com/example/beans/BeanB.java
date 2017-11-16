@@ -3,13 +3,13 @@ package com.example.beans;
 import com.example.annotation.Bean;
 import com.example.annotation.ReferenceBean;
 
-@Bean("classB")
-public class ClassB {
+@Bean("beanB")
+public class BeanB implements IBeanB {
     private String value;
-    @ReferenceBean("classA")
-    private ClassA classA;
+    @ReferenceBean("beanA")
+    private IBeanA beanA;
 
-    public ClassB() {
+    public BeanB() {
         this.value = "b";
     }
 
@@ -21,16 +21,16 @@ public class ClassB {
         this.value = value;
     }
 
-    public ClassA getClassA() {
-        return classA;
+    public IBeanA getBeanA() {
+        return beanA;
     }
 
-    public void setClassA(ClassA classA) {
-        this.classA = classA;
+    public void setBeanA(IBeanA beanA) {
+        this.beanA = beanA;
     }
 
     @Override
     public String toString() {
-        return value + classA.toString();
+        return value + (beanA != null ? beanA.toString() : "<null>");
     }
 }

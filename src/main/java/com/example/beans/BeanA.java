@@ -2,11 +2,11 @@ package com.example.beans;
 
 import com.example.annotation.Bean;
 
-@Bean("classA")
-public class ClassA {
+@Bean("beanA")
+public class BeanA implements IBeanA {
     private String value;
 
-    public ClassA() {
+    public BeanA() {
         this.value = "a";
     }
 

@@ -4,8 +4,7 @@ import com.example.annotation.Bean;
 import com.example.annotation.ReferenceBean;
 
 import java.io.File;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
+import java.lang.reflect.*;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -68,27 +67,64 @@ public class IOC {
             Bean bean = clazz.getAnnotation(Bean.class);
             if (bean != null) {
                 try {
-                    Object instance = clazz.newInstance();
-                    this.context.put(bean.value(), instance);
-                } catch (InstantiationException | IllegalAccessException e) {
+                    String name = bean.value().isEmpty() ? clazz.getSimpleName() : bean.value();
+                    Object instance = clazz.getDeclaredConstructor().newInstance();
+                    Object proxyInstance = Proxy.newProxyInstance(clazz.getClassLoader(), clazz.getInterfaces(), new BeanInvocationHandler(instance, name));
+                    this.context.put(name, proxyInstance);
+                } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
                     // ignore exception
                 }
             }
         }
         // now resolve reference bean
         for (Object o : this.context.values()) {
-            Class<?> clazz = o.getClass();
+            Object target = ((BeanInvocationHandler) Proxy.getInvocationHandler(o)).target;
+            Class<?> clazz = target.getClass();
             for (Field field: clazz.getDeclaredFields()) {
                 ReferenceBean referenceBean = field.getAnnotation(ReferenceBean.class);
                 if (referenceBean != null) {
                     field.setAccessible(true);
                     try {
-                        field.set(o, this.context.get(referenceBean.value()));
+                        field.set(target, this.context.get(referenceBean.value()));
                     } catch (IllegalAccessException e) {
                         // ignore exception
                     }
                 }
             }
+        }
+    }
+
+    private static class BeanInvocationHandler implements InvocationHandler {
+
+        private final Object target;
+        private final String name;
+
+        public BeanInvocationHandler(Object target, String name) {
+            this.target = target;
+            this.name = name;
+        }
+
+        @Override
+        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+            try {
+                System.out.println("before:"+name+":"+method);
+                return method.invoke(target, args);
+            } finally {
+                System.out.println("after:"+name+":"+method);
+            }
+        }
+
+        @Override
+        public int hashCode() {
+            return target.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof BeanInvocationHandler) {
+                   return target.equals(((BeanInvocationHandler)obj).target);
+            }
+            return target.equals(obj);
         }
     }
 }
